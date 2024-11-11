@@ -1,42 +1,21 @@
 package xargon
 
 import (
+	"bytes"
+	"compress/zlib"
 	"encoding/binary"
+	"encoding/xml"
 	"errors"
 	"os"
 )
 
-const (
-	xarHeaderMagic   = 0x78617221 /* 'xar!' */
-	xarHeaderVersion = 1          // Currently there is only version 1.
-	xarHeaderSize    = 28         /* (32 + 16 + 16 + 64 + 64 + 32) / 8 */
-)
-
-type xarHeader struct {
-	/* This should always equal 'xar!' */
-	magic                 uint32 // File signature used to identify the file format as Xar.
-	size                  uint16 // Header size
-	version               uint16 // Version of Xar format to use.
-	tocLengthCompressed   uint64 // Length of the TOC compressed data.
-	tocLengthUncompressed uint64 // Length of the TOC uncompressed data.
-	/* Checksum algorithm:
-	0 = none
-	1 = SHA1
-	2 = MD5
-	3 = SHA-256
-	4 = SHA-512 */
-	checksumAlgorithm uint32
-	/* A nul-terminated, zero-padded to multiple of 4, message digest name
-	 * appears here if checksumAlgorithm is 3 which must not be empty ("") or "none".
-	 */
-}
-
 type XarReader struct {
 	file   *os.File
 	header *xarHeader
+	toc    *xarToc
 }
 
-func (xr *XarReader) ReadHeader() error {
+func (xr *XarReader) readHeader() error {
 
 	if xr.file == nil {
 		return errors.New("cannot read header from nil file")
@@ -91,7 +70,7 @@ func (xr *XarReader) ReadHeader() error {
 	return nil
 }
 
-func (xr *XarReader) ReadTOC() error {
+func (xr *XarReader) readTOC() error {
 
 	if xr.file == nil {
 		return errors.New("cannot read toc from nil file")
@@ -101,7 +80,25 @@ func (xr *XarReader) ReadTOC() error {
 		return errors.New("cannot read toc from nil header")
 	}
 
-	return nil
+	toc := make([]byte, xr.header.tocLengthCompressed)
+	if n, err := xr.file.ReadAt(toc, xarHeaderSize); err != nil {
+		return err
+	} else if uint64(n) != xr.header.tocLengthCompressed {
+		return errors.New("xar toc size mismatch")
+	}
+
+	br := bytes.NewReader(toc)
+	zr, err := zlib.NewReader(br)
+	if err != nil {
+		return err
+	}
+
+	return xml.NewDecoder(zr).Decode(&xr.toc)
+}
+
+// TODO: Remove this after testing
+func (xr *XarReader) TOC() *xarToc {
+	return xr.toc
 }
 
 func (xr *XarReader) Close() error {
@@ -117,6 +114,14 @@ func NewReader(path string) (*XarReader, error) {
 
 	xr := &XarReader{
 		file: xf,
+	}
+
+	if err := xr.readHeader(); err != nil {
+		return nil, err
+	}
+
+	if err := xr.readTOC(); err != nil {
+		return nil, err
 	}
 
 	return xr, nil

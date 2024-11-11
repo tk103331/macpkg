@@ -19,13 +19,7 @@ func main() {
 	}
 	defer xr.Close()
 
-	if err := xr.ReadHeader(); err != nil {
-		panic(err)
-	}
-
-	if err := xr.ReadTOC(); err != nil {
-		panic(err)
-	}
+	fmt.Println(xr.TOC())
 
 	fmt.Println("no errors")
 
