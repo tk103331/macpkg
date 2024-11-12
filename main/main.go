@@ -21,7 +21,7 @@ func main() {
 	}
 	defer xr.Close()
 
-	if err := xr.Verify(); err != nil {
+	if err := xr.CheckCertificatesSignatures(); err != nil {
 		panic(err)
 	}
 
