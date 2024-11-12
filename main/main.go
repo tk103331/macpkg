@@ -33,6 +33,14 @@ func main() {
 		panic(err)
 	} else {
 		for _, tf := range tocFiles {
+
+			checksum, method, err := xr.ChecksumMethod(tf)
+			if err != nil {
+				panic(err)
+			}
+
+			fmt.Println(tf, checksum, method)
+
 			fullPath := filepath.Join(rootDir, tf)
 			dir, _ := filepath.Split(fullPath)
 			if _, err := os.Stat(dir); os.IsNotExist(err) {

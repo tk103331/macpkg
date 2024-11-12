@@ -237,6 +237,25 @@ func (xr *XarReader) Open(name string) (io.Reader, error) {
 	}
 }
 
+func (xr *XarReader) ChecksumMethod(name string) (string, string, error) {
+	if xr.filesIndex == nil {
+		if err := xr.indexFiles(); err != nil {
+			return "", "", err
+		}
+	}
+
+	if xr.filesIndex == nil {
+		return "", "", errors.New("xar files have not been indexed")
+	}
+
+	if xf, ok := xr.filesIndex[name]; ok {
+		extChecksum := xf.Data.ExtractedChecksum
+		return extChecksum.Text, extChecksum.Style, nil
+	} else {
+		return "", "", errors.New("xar file not found: " + name)
+	}
+}
+
 func (xr *XarReader) openFile(xf *xarFile) (io.Reader, error) {
 
 	if xf == nil {
