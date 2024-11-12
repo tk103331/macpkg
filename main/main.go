@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 func main() {
@@ -26,7 +27,7 @@ func main() {
 	}
 
 	// testing extracting files to temp folder
-	rootDir := filepath.Join(os.TempDir(), "xargon")
+	rootDir := filepath.Join(os.TempDir(), "xargon", strings.TrimSuffix(path, filepath.Ext(path)))
 	fmt.Println("file://" + rootDir)
 
 	if tocFiles, err := xr.ReadFiles(); err != nil {
