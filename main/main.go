@@ -19,7 +19,9 @@ func main() {
 	}
 	defer xr.Close()
 
-	fmt.Println(xr.TOC())
+	if err := xr.Verify(); err != nil {
+		panic(err)
+	}
 
 	fmt.Println("no errors")
 

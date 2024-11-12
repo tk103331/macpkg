@@ -3,6 +3,8 @@ package xargon
 import (
 	"bytes"
 	"compress/zlib"
+	"crypto/x509"
+	"encoding/base64"
 	"encoding/binary"
 	"encoding/xml"
 	"errors"
@@ -13,6 +15,7 @@ type XarReader struct {
 	file   *os.File
 	header *xarHeader
 	toc    *xarToc
+	certs  []*x509.Certificate
 }
 
 func (xr *XarReader) readHeader() error {
@@ -20,8 +23,6 @@ func (xr *XarReader) readHeader() error {
 	if xr.file == nil {
 		return errors.New("cannot read header from nil file")
 	}
-
-	// read header
 
 	h := make([]byte, xarHeaderSize)
 	if n, err := xr.file.ReadAt(h, 0); err != nil {
@@ -96,9 +97,39 @@ func (xr *XarReader) readTOC() error {
 	return xml.NewDecoder(zr).Decode(&xr.toc)
 }
 
-// TODO: Remove this after testing
-func (xr *XarReader) TOC() *xarToc {
-	return xr.toc
+func (xr *XarReader) readCertificates() error {
+
+	if xr.toc == nil {
+		return errors.New("cannot check signatures from nil toc")
+	}
+
+	for _, encCert := range xr.toc.Toc.Signature.KeyInfo.X509Data.X509Certificate {
+
+		decCert, err := base64.StdEncoding.DecodeString(encCert)
+		if err != nil {
+			return err
+		}
+
+		if cert, err := x509.ParseCertificate(decCert); err != nil {
+			return err
+		} else {
+			xr.certs = append(xr.certs, cert)
+		}
+	}
+
+	return nil
+}
+
+func (xr *XarReader) Verify() error {
+	if len(xr.certs) == 0 {
+		if err := xr.readCertificates(); err != nil {
+			return err
+		}
+	}
+
+	//TODO: implement cert verification
+
+	return nil
 }
 
 func (xr *XarReader) Close() error {
