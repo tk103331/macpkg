@@ -2,6 +2,7 @@ package xargon
 
 import (
 	"bytes"
+	"compress/bzip2"
 	"compress/zlib"
 	"crypto/x509"
 	"encoding/base64"
@@ -15,7 +16,8 @@ import (
 
 const (
 	applicationOctetStreamMimeType = "application/octet-stream"
-	applicationGzipStreamMimeType  = "application/x-gzip"
+	applicationGzipMimeType        = "application/x-gzip"
+	applicationBzip2MimeType       = "application/x-bzip2"
 )
 
 type XarReader struct {
@@ -268,9 +270,10 @@ func (xr *XarReader) openFile(xf *xarFile) (io.Reader, error) {
 	switch enc {
 	case applicationOctetStreamMimeType:
 		return sectionReader, nil
-	case applicationGzipStreamMimeType:
-
+	case applicationGzipMimeType:
 		return zlib.NewReader(sectionReader)
+	case applicationBzip2MimeType:
+		return bzip2.NewReader(sectionReader), nil
 	default:
 		return nil, errors.New("unknown xar file encoding: " + enc)
 	}
