@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/arelate/xargon"
+	"github.com/tk103331/macpkg/xar"
 	"io"
 	"os"
 	"path/filepath"
@@ -16,7 +16,7 @@ func main() {
 		path = os.Args[1]
 	}
 
-	xr, err := xargon.NewReader(path)
+	xr, err := xar.NewReader(path)
 	if err != nil {
 		panic(err)
 	}
