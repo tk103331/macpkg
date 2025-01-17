@@ -1,4 +1,4 @@
-package xargon
+package xar
 
 import (
 	"bytes"
@@ -283,15 +283,21 @@ func (xr *XarReader) Close() error {
 	return xr.file.Close()
 }
 
-func NewReader(path string) (*XarReader, error) {
+func Open(path string) (*XarReader, error) {
 
 	xf, err := os.Open(path)
 	if err != nil {
 		return nil, err
 	}
+	return NewReader(xf)
+}
 
+func NewReader(file *os.File) (*XarReader, error) {
+	if file == nil {
+		return nil, errors.New("cannot open nil file")
+	}
 	xr := &XarReader{
-		file: xf,
+		file: file,
 	}
 
 	// xar file = Header + TOC + Heap

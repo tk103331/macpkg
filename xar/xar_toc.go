@@ -1,4 +1,4 @@
-package xargon
+package xar
 
 import (
 	"encoding/xml"

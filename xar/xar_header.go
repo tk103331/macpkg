@@ -1,4 +1,4 @@
-package xargon
+package xar
 
 const (
 	xarHeaderMagic   = 0x78617221 /* 'xar!' */
